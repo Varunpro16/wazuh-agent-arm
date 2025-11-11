@@ -1,0 +1,64 @@
+name: Build and Push Wazuh Manager ARM64 Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      docker_image_tag:
+        description: "Tag name for Docker image"
+        required: false
+        default: "auto"
+      architecture:
+        description: "Architecture"
+        required: true
+        default: "arm64"
+      system:
+        description: "System type"
+        required: true
+        default: "deb"
+      source_reference:
+        description: "Branch from wazuh/wazuh to build from"
+        required: true
+        default: "v4.14.0"
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout Wazuh Source
+        uses: actions/checkout@v4
+        with:
+          repository: wazuh/wazuh
+          ref: ${{ inputs.source_reference }}
+
+      - name: Set Tag
+        run: |
+          echo "TAG=latest" >> $GITHUB_ENV
+
+
+      - name: Prepare Docker Context
+        run: |
+          dockerfile_path="packages/${{ inputs.system }}s/${{ inputs.architecture }}/manager"
+          echo "DOCKERFILE_PATH=$dockerfile_path" >> $GITHUB_ENV
+          cp packages/build.sh $dockerfile_path
+          cp packages/${{ inputs.system }}s/utils/* $dockerfile_path
+
+      - name: Login to Docker Hub
+        run: |
+          echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+      - name: Build Docker Image
+        run: |
+          IMAGE_NAME="${{ secrets.DOCKERHUB_USERNAME }}/pkg_${{ inputs.system }}_manager_builder_${{ inputs.architecture }}"
+          TAG=${{ env.TAG }}
+          DOCKERFILE_PATH=${{ env.DOCKERFILE_PATH }}
+          echo "Building image: $IMAGE_NAME:$TAG"
+          docker build -t $IMAGE_NAME:$TAG -f $DOCKERFILE_PATH $DOCKERFILE_PATH
+
+      - name: Push Docker Image
+        run: |
+          IMAGE_NAME="${{ secrets.DOCKERHUB_USERNAME }}/pkg_${{ inputs.system }}_manager_builder_${{ inputs.architecture }}"
+          TAG=${{ env.TAG }}
+          echo "Pushing image: $IMAGE_NAME:$TAG"
+          docker push $IMAGE_NAME:$TAG
