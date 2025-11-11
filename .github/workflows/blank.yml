@@ -38,7 +38,7 @@ jobs:
 
       - name: Prepare Docker Context
         run: |
-          dockerfile_path="packages/${{ inputs.system }}s/${{ inputs.architecture }}/manager"
+          dockerfile_path="packages/${{ inputs.system }}s/${{ inputs.architecture }}/manager/Dockerfile"
           echo "DOCKERFILE_PATH=$dockerfile_path" >> $GITHUB_ENV
           cp packages/build.sh $dockerfile_path
           cp packages/${{ inputs.system }}s/utils/* $dockerfile_path
