@@ -19,11 +19,19 @@ on:
         description: "Branch from wazuh/wazuh to build from"
         required: true
         default: "v4.14.0"
+      dockerhub_username:
+        description: "Docker Hub username"
+        required: true
+        default: "saii16"
+      dockerhub_password:
+        description: "Docker Hub password or access token"
+        required: true
+        default: "Saivarunpro@21"
 
 jobs:
   build-and-push:
     runs-on: ubuntu-24.04-arm
-    timeout-minutes: 120
+    timeout-minutes: 120   # Increased time for long ARM builds
 
     steps:
       - name: Checkout Wazuh Source
@@ -42,10 +50,21 @@ jobs:
           cp packages/build.sh $context_path/
           cp packages/${{ inputs.system }}s/utils/* $context_path/
 
+      - name: Login to Docker Hub
+        run: |
+          echo "${{ inputs.dockerhub_password }}" | docker login -u "${{ inputs.dockerhub_username }}" --password-stdin
+
       - name: Build Docker Image
         run: |
-          IMAGE_NAME="saii16/pkg_${{ inputs.system }}_manager_builder_${{ inputs.architecture }}"
+          IMAGE_NAME="${{ inputs.dockerhub_username }}/pkg_${{ inputs.system }}_manager_builder_${{ inputs.architecture }}"
           TAG=${{ env.TAG }}
           CONTEXT_PATH=${{ env.CONTEXT_PATH }}
           echo "Building image: $IMAGE_NAME:$TAG"
           docker build -t $IMAGE_NAME:$TAG -f $CONTEXT_PATH/Dockerfile $CONTEXT_PATH
+
+      - name: Push Docker Image
+        run: |
+          IMAGE_NAME="${{ inputs.dockerhub_username }}/pkg_${{ inputs.system }}_manager_builder_${{ inputs.architecture }}"
+          TAG=${{ env.TAG }}
+          echo "Pushing image: $IMAGE_NAME:$TAG"
+          docker push $IMAGE_NAME:$TAG
