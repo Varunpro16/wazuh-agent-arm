@@ -33,33 +33,19 @@ jobs:
           ref: ${{ inputs.source_reference }}
 
       - name: Set Tag
-        run: |
-          echo "TAG=latest" >> $GITHUB_ENV
+        run: echo "TAG=latest" >> $GITHUB_ENV
 
       - name: Prepare Docker Context
         run: |
-          dockerfile_path="packages/${{ inputs.system }}s/${{ inputs.architecture }}/manager/Dockerfile"
-          echo "DOCKERFILE_PATH=$dockerfile_path" >> $GITHUB_ENV
-          cp packages/build.sh $dockerfile_path
-          cp packages/${{ inputs.system }}s/utils/* $dockerfile_path
-
-      - name: Login to Docker Hub
-        run: |
-          DOCKERHUB_USERNAME="saii16"
-          DOCKERHUB_PASSWORD="Saivarunpro@21"
-          echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+          context_path="packages/${{ inputs.system }}s/${{ inputs.architecture }}/manager"
+          echo "CONTEXT_PATH=$context_path" >> $GITHUB_ENV
+          cp packages/build.sh $context_path/
+          cp packages/${{ inputs.system }}s/utils/* $context_path/
 
       - name: Build Docker Image
         run: |
-          IMAGE_NAME="your_dockerhub_username/pkg_${{ inputs.system }}_manager_builder_${{ inputs.architecture }}"
+          IMAGE_NAME="saii16/pkg_${{ inputs.system }}_manager_builder_${{ inputs.architecture }}"
           TAG=${{ env.TAG }}
-          DOCKERFILE_PATH=${{ env.DOCKERFILE_PATH }}
+          CONTEXT_PATH=${{ env.CONTEXT_PATH }}
           echo "Building image: $IMAGE_NAME:$TAG"
-          docker build -t $IMAGE_NAME:$TAG -f $DOCKERFILE_PATH $DOCKERFILE_PATH
-
-      - name: Push Docker Image
-        run: |
-          IMAGE_NAME="your_dockerhub_username/pkg_${{ inputs.system }}_manager_builder_${{ inputs.architecture }}"
-          TAG=${{ env.TAG }}
-          echo "Pushing image: $IMAGE_NAME:$TAG"
-          docker push $IMAGE_NAME:$TAG
+          docker build -t $IMAGE_NAME:$TAG -f $CONTEXT_PATH/Dockerfile $CONTEXT_PATH
