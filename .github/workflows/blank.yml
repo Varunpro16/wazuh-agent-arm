@@ -6,7 +6,7 @@ on:
       docker_image_tag:
         description: "Tag name for Docker image"
         required: false
-        default: "auto"
+        default: "latest"
       architecture:
         description: "Architecture"
         required: true
@@ -36,7 +36,6 @@ jobs:
         run: |
           echo "TAG=latest" >> $GITHUB_ENV
 
-
       - name: Prepare Docker Context
         run: |
           dockerfile_path="packages/${{ inputs.system }}s/${{ inputs.architecture }}/manager"
@@ -46,11 +45,13 @@ jobs:
 
       - name: Login to Docker Hub
         run: |
-          echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+          DOCKERHUB_USERNAME="saii16"
+          DOCKERHUB_PASSWORD="Saivarunpro@21"
+          echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
 
       - name: Build Docker Image
         run: |
-          IMAGE_NAME="${{ secrets.DOCKERHUB_USERNAME }}/pkg_${{ inputs.system }}_manager_builder_${{ inputs.architecture }}"
+          IMAGE_NAME="your_dockerhub_username/pkg_${{ inputs.system }}_manager_builder_${{ inputs.architecture }}"
           TAG=${{ env.TAG }}
           DOCKERFILE_PATH=${{ env.DOCKERFILE_PATH }}
           echo "Building image: $IMAGE_NAME:$TAG"
@@ -58,7 +59,7 @@ jobs:
 
       - name: Push Docker Image
         run: |
-          IMAGE_NAME="${{ secrets.DOCKERHUB_USERNAME }}/pkg_${{ inputs.system }}_manager_builder_${{ inputs.architecture }}"
+          IMAGE_NAME="your_dockerhub_username/pkg_${{ inputs.system }}_manager_builder_${{ inputs.architecture }}"
           TAG=${{ env.TAG }}
           echo "Pushing image: $IMAGE_NAME:$TAG"
           docker push $IMAGE_NAME:$TAG
